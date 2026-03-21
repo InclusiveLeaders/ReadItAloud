@@ -28,4 +28,16 @@
 
     <!-- Content descriptions — Story 2.2 -->
     <string name="cd_read_button">Read text aloud. Tap to scan.</string>
+
+    <!-- TTS announcements — Story 2.3 -->
+    <string name="tts_done">Done.</string>
+    <string name="tts_working">Working on it.</string>
+
+    <!-- ReadingScreen buttons — Story 2.3 -->
+    <string name="btn_hear_again">Hear again</string>
+    <string name="btn_scan_new">Scan new</string>
+
+    <!-- Content descriptions — Story 2.3 -->
+    <string name="cd_hear_again_button">Play text again</string>
+    <string name="cd_scan_new_button">Return to camera to scan new text</string>
 </resources>
