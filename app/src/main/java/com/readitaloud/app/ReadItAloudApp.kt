@@ -1,6 +1,7 @@
 package com.readitaloud.app
 
 import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
 
-// TODO Story 1.2: Add @HiltAndroidApp annotation once Hilt dependency is added
+@HiltAndroidApp
 class ReadItAloudApp : Application()

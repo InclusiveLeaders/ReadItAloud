@@ -1,6 +1,9 @@
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.kotlin.ksp)
 }
 
 android {
@@ -55,4 +58,23 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+    // CameraX
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    // camera-compose: only available as alpha — deferred to Story 2.1
+    // ML Kit Text Recognition (bundled — offline, NOT play-services variant)
+    implementation(libs.mlkit.text.recognition)
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+    // Navigation Compose
+    implementation(libs.androidx.navigation.compose)
+    // Accompanist Permissions
+    implementation(libs.accompanist.permissions)
+    // Lifecycle ViewModel Compose
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 }

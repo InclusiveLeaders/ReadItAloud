@@ -1,4 +1,11 @@
 package com.readitaloud.app.di
 
-// TODO Story 1.3: Add @Module @InstallIn(SingletonComponent::class) once Hilt is added
-// Provides: OcrRepository
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+
+@Module
+@InstallIn(SingletonComponent::class)
+object OcrModule {
+    // OcrRepository binding will be added in Story 2.2
+}

@@ -19,3 +19,18 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ML Kit Text Recognition (bundled)
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.mlkit.**
+-keep class com.google.android.gms.internal.mlkit_vision_text_recognition.** { *; }
+-dontwarn com.google.android.gms.internal.mlkit_vision_text_recognition.**
+
+
+# CameraX
+-keep class androidx.camera.** { *; }
+-dontwarn androidx.camera.**
+
+# Hilt / Dagger generated code
+-keep class dagger.hilt.** { *; }
+-dontwarn dagger.hilt.**

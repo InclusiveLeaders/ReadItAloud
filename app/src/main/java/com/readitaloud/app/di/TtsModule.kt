@@ -1,4 +1,11 @@
 package com.readitaloud.app.di
 
-// TODO Story 1.3: Add @Module @InstallIn(SingletonComponent::class) once Hilt is added
-// Provides: TtsRepository
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+
+@Module
+@InstallIn(SingletonComponent::class)
+object TtsModule {
+    // TtsRepository binding will be added in Story 2.3
+}
