@@ -17,4 +17,22 @@ class AppViewModel @Inject constructor() : ViewModel() {
     fun startCapture() {}
     fun stopPlayback() {}
     fun togglePlayback() {}
+
+    /**
+     * Speaks an announcement via TTS before UI state updates.
+     * Architecture rule: TTS must fire BEFORE visual state change (200–300ms lead).
+     * TODO Story 2.3: Wire to TtsRepository for actual speech output.
+     */
+    fun speakAnnouncement(text: String) {
+        // Stub — no-op until Story 2.3 wires TtsRepository
+    }
+
+    /**
+     * Called when the user taps the torch toggle icon.
+     * FLASHLIGHT runtime permission is requested here (on first tap only).
+     * TODO Story 3.4: Implement FLASHLIGHT permission request + CameraX torch control.
+     */
+    fun onTorchToggleTapped() {
+        // Stub — FLASHLIGHT permission requested on-demand in Story 3.4
+    }
 }

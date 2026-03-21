@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">ReadItAloud</string>
+
+    <!-- Camera permission strings -->
+    <string name="permission_camera_needed_title">Camera access needed</string>
+    <string name="permission_camera_needed_body">Read It Aloud uses your camera to capture text. Your photos are never saved or shared.</string>
+    <string name="permission_camera_rationale">Camera access is needed to read text. Your photos are never saved or shared.</string>
+    <string name="permission_camera_request_button">Allow camera access</string>
+    <string name="permission_camera_denied_body">Please allow camera access in your device Settings to use Read It Aloud.</string>
+    <string name="permission_camera_denied_button">Open Settings</string>
+
+    <!-- TTS announcement strings -->
+    <string name="tts_camera_needed">Camera access is needed. Tap the button to allow.</string>
+    <string name="tts_camera_denied">Camera access was not granted. Open Settings to allow it.</string>
 </resources>
