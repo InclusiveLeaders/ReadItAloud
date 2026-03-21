@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -36,6 +38,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.readitaloud.app.R
+import com.readitaloud.app.model.AppUiState
 import com.readitaloud.app.ui.components.CameraViewfinder
 import com.readitaloud.app.viewmodel.AppViewModel
 
@@ -50,7 +53,6 @@ fun CameraScreen(
     onNavigateToReading: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
-    @Suppress("UNUSED_VARIABLE")
     val uiState by appViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -64,11 +66,18 @@ fun CameraScreen(
     }
 
     // Speak TTS announcement when permission is permanently denied.
-    // TTS is a stub this story — fully wired in Story 2.3.
-    // Architecture rule: speak BEFORE visual update (LaunchedEffect fires before next recomposition renders content).
     LaunchedEffect(cameraPermissionState.status) {
         if (!cameraPermissionState.status.isGranted && !cameraPermissionState.status.shouldShowRationale) {
             appViewModel.speakAnnouncement(context.getString(R.string.tts_camera_denied))
+        }
+    }
+
+    // Navigate to ReadingScreen when OCR succeeds; reset to Ready on NoTextFound.
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is AppUiState.Reading -> onNavigateToReading()
+            is AppUiState.NoTextFound -> appViewModel.resetToReady()
+            else -> { /* no navigation */ }
         }
     }
 
@@ -87,19 +96,42 @@ fun CameraScreen(
                     appViewModel = appViewModel,
                     modifier = Modifier.fillMaxSize()
                 )
-                // TODO Story 2.2: Add READ button overlay here
+
+                // READ button overlay — bottom-centre above system nav bar
+                // Story 3.1 will replace this Button with the custom ReadButton composable
+                val cdRead = stringResource(R.string.cd_read_button)
+                val isReady = uiState is AppUiState.Ready
+                Button(
+                    onClick = { appViewModel.startCapture() },
+                    enabled = isReady,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 48.dp)
+                        .size(130.dp)
+                        .semantics { contentDescription = cdRead },
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Amber,
+                        disabledContainerColor = Amber.copy(alpha = 0.4f)
+                    )
+                ) {
+                    Text(
+                        text = stringResource(R.string.btn_read),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
         }
 
         cameraPermissionState.status.shouldShowRationale -> {
-            // User denied once but can be asked again — show rationale UI
             CameraPermissionNeededContent(
                 onRequestPermission = { cameraPermissionState.launchPermissionRequest() }
             )
         }
 
         else -> {
-            // Permanently denied — must send user to system settings
             CameraPermissionDeniedContent(onOpenSettings = onOpenSettings)
         }
     }

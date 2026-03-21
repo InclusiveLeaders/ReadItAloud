@@ -17,4 +17,15 @@
 
     <!-- Accessibility content descriptions -->
     <string name="cd_camera_viewfinder">Live camera preview. Point at text and tap READ to scan.</string>
+
+    <!-- READ button -->
+    <string name="btn_read">READ</string>
+
+    <!-- TTS announcements — Story 2.2 -->
+    <string name="tts_reading">Reading.</string>
+    <string name="tts_no_text_found">I couldn\'t find any text. Try moving a little closer.</string>
+    <string name="tts_capture_error">Something went wrong. Please try again.</string>
+
+    <!-- Content descriptions — Story 2.2 -->
+    <string name="cd_read_button">Read text aloud. Tap to scan.</string>
 </resources>

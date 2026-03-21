@@ -4,11 +4,14 @@ import android.content.Context
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.Executor
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -66,6 +69,27 @@ class CameraRepository @Inject constructor(
                 // TODO Story 2.3: Speak tts_camera_bind_error announcement on failure
             }
         }, ContextCompat.getMainExecutor(context))
+    }
+
+    /**
+     * Triggers a single image capture via ImageCapture.OnImageCapturedCallback.
+     * CRITICAL: caller MUST call imageProxy.close() in both onSuccess and onError paths.
+     * [executor] — use ContextCompat.getMainExecutor(context) for the callback thread.
+     */
+    fun captureImage(
+        executor: Executor,
+        onSuccess: (ImageProxy) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        val capture = imageCapture
+        if (capture == null) {
+            onError(IllegalStateException("ImageCapture not initialized — ensure bindCamera() was called first"))
+            return
+        }
+        capture.takePicture(executor, object : ImageCapture.OnImageCapturedCallback() {
+            override fun onCaptureSuccess(image: ImageProxy) = onSuccess(image)
+            override fun onError(exception: ImageCaptureException) = onError(exception)
+        })
     }
 
     /**
