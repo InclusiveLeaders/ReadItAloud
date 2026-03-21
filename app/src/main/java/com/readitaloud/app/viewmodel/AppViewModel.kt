@@ -24,8 +24,8 @@ class AppViewModel @Inject constructor(
      * Architecture rule: speak BEFORE state update — stub until Story 2.3.
      */
     fun bindCamera(lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider) {
-        speakAnnouncement("Ready.")        // audio first — stub no-op until Story 2.3
-        _uiState.value = AppUiState.Ready  // confirm Ready state on successful camera bind
+        // TODO Story 2.3: speak R.string.tts_ready via TtsRepository BEFORE state update (architecture rule)
+        _uiState.value = AppUiState.Ready
         cameraRepository.bindCamera(lifecycleOwner, surfaceProvider)
     }
 

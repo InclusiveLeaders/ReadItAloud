@@ -23,6 +23,7 @@ class CameraRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private var imageCapture: ImageCapture? = null
+    private var cameraProvider: ProcessCameraProvider? = null
 
     /**
      * Returns the bound ImageCapture use case for Story 2.2 capture triggering.
@@ -32,29 +33,33 @@ class CameraRepository @Inject constructor(
 
     /**
      * Binds Preview + ImageCapture use cases to the given lifecycle.
+     * Caches the resolved [ProcessCameraProvider] for safe use in [unbindAll].
      * Calls unbindAll() before binding to prevent IllegalStateException on resume.
      * On failure, logs the error. TTS spoken error wired in Story 2.3.
      */
     fun bindCamera(lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
+            val provider = cameraProviderFuture.get()
+            cameraProvider = provider
 
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(surfaceProvider)
             }
 
-            imageCapture = ImageCapture.Builder()
+            // Use local val to avoid force unwrap on the class property
+            val capture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
+            imageCapture = capture
 
             try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
+                provider.unbindAll()
+                provider.bindToLifecycle(
                     lifecycleOwner,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     preview,
-                    imageCapture!!
+                    capture
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Camera bind failed", e)
@@ -65,14 +70,11 @@ class CameraRepository @Inject constructor(
 
     /**
      * Unbinds all CameraX use cases. Call on explicit teardown if needed.
+     * Uses the cached [cameraProvider] to avoid a blocking [ListenableFuture.get] call.
      * Lifecycle-bound unbinding happens automatically via CameraX + LifecycleOwner.
      */
     fun unbindAll() {
-        try {
-            ProcessCameraProvider.getInstance(context).get().unbindAll()
-        } catch (e: Exception) {
-            Log.e(TAG, "unbindAll failed", e)
-        }
+        cameraProvider?.unbindAll() ?: Log.w(TAG, "unbindAll called before camera provider was ready")
     }
 
     companion object {
