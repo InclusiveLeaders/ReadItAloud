@@ -37,6 +37,10 @@ class AppViewModel @Inject constructor(
     /**
      * Binds the CameraX preview to the given lifecycle and surface.
      * Architecture rule: speak BEFORE state update — stub until Story 2.3.
+     *
+     * NOTE: Once TTS is live (Story 2.3), this must only fire once on initial bind —
+     * not on every recomposition. CameraViewfinder already ensures that by calling
+     * bindCamera() in the AndroidView factory, not in update.
      */
     fun bindCamera(lifecycleOwner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider) {
         // TODO Story 2.3: speak R.string.tts_ready via TtsRepository BEFORE state update (architecture rule)
@@ -89,9 +93,12 @@ class AppViewModel @Inject constructor(
                 }
             },
             onError = { exception ->
-                Log.e(TAG, "Image capture failed", exception)
-                speakAnnouncement(context.getString(R.string.tts_capture_error))
-                _uiState.value = AppUiState.Error(exception.message ?: "Capture failed")
+                // Wrap in Main dispatch — onError fires on the capture executor (not Main).
+                viewModelScope.launch(Dispatchers.Main) {
+                    Log.e(TAG, "Image capture failed", exception)
+                    speakAnnouncement(context.getString(R.string.tts_capture_error))
+                    _uiState.value = AppUiState.Error(exception.message ?: "Capture failed")
+                }
             }
         )
     }

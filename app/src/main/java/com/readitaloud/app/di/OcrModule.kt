@@ -7,5 +7,5 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 object OcrModule {
-    // OcrRepository binding will be added in Story 2.2
+    // OcrRepository uses @Singleton + @Inject constructor — no explicit binding needed.
 }

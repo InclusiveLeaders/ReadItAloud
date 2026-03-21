@@ -16,9 +16,8 @@ import com.readitaloud.app.viewmodel.AppViewModel
  * Full-screen camera preview composable.
  * Binds CameraX Preview + ImageCapture use cases to the current lifecycle.
  *
- * The [update] lambda is called on first composition and on any recomposition where
- * captured state changes. CameraRepository.bindCamera() calls unbindAll() before
- * rebinding, so duplicate bindings are safe.
+ * bindCamera() is called once in the AndroidView factory, not in update, so OCR
+ * state transitions do not trigger spurious unbindAll()/rebind cycles mid-capture.
  *
  * TODO Story 3.1: Overlay amber corner guide brackets (18dp arm, 2dp stroke).
  */
@@ -35,13 +34,8 @@ fun CameraViewfinder(
             PreviewView(ctx).apply {
                 implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                 scaleType = PreviewView.ScaleType.FILL_CENTER
+                appViewModel.bindCamera(lifecycleOwner, surfaceProvider)
             }
-        },
-        // NOTE: update is called on every recomposition where captured state changes.
-        // bindCamera() calls unbindAll() internally, so re-entrancy is safe but keep
-        // captured state (lifecycleOwner, appViewModel) stable to avoid unnecessary rebinds.
-        update = { previewView ->
-            appViewModel.bindCamera(lifecycleOwner, previewView.surfaceProvider)
         },
         modifier = modifier
             .fillMaxSize()

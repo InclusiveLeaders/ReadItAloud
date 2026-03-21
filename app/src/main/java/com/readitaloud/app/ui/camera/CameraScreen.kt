@@ -73,6 +73,9 @@ fun CameraScreen(
     }
 
     // Navigate to ReadingScreen when OCR succeeds; reset to Ready on NoTextFound.
+    // TODO Story 2.3 pre-condition: NoTextFound reset must wait for TTS completion
+    // (or a minimum delay) before calling resetToReady() — otherwise the "no text" announcement
+    // gets cut off by the immediate state transition back to Ready.
     LaunchedEffect(uiState) {
         when (uiState) {
             is AppUiState.Reading -> onNavigateToReading()

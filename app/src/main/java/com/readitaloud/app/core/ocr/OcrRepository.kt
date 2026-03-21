@@ -26,6 +26,10 @@ import javax.inject.Singleton
 @Singleton
 class OcrRepository @Inject constructor() {
 
+    // Singleton recognizer — instantiated once and reused across all calls.
+    // Lives for the app lifetime (acceptable for a @Singleton repository).
+    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
     /**
      * Runs on-device OCR on the given [imageProxy].
      * Handles 90° rotation automatically via [imageProxy.imageInfo.rotationDegrees].
@@ -43,7 +47,6 @@ class OcrRepository @Inject constructor() {
                 imageProxy.imageInfo.rotationDegrees   // handles up to 90° rotation (AC4)
             )
 
-            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
             val result = Tasks.await(recognizer.process(inputImage))
             imageProxy.close()   // CRITICAL: close before returning
 
