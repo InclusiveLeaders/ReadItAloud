@@ -12,4 +12,9 @@
     <!-- TTS announcement strings -->
     <string name="tts_camera_needed">Camera access is needed. Tap the button to allow.</string>
     <string name="tts_camera_denied">Camera access was not granted. Open Settings to allow it.</string>
+    <string name="tts_ready">Ready.</string>
+    <string name="tts_camera_bind_error">Camera could not be started. Please restart the app.</string>
+
+    <!-- Accessibility content descriptions -->
+    <string name="cd_camera_viewfinder">Live camera preview. Point at text and tap READ to scan.</string>
 </resources>

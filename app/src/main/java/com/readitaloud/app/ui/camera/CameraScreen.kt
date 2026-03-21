@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,11 +36,12 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.readitaloud.app.R
+import com.readitaloud.app.ui.components.CameraViewfinder
 import com.readitaloud.app.viewmodel.AppViewModel
 
-private val DarkNavy = Color(0xFF0F1B26)
 private val Amber = Color(0xFFC97A1A)
 private val MutedWhite = Color(0xFFB0BEC5)
+private val DarkNavy = Color(0xFF0F1B26)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -80,20 +82,12 @@ fun CameraScreen(
 
     when {
         cameraPermissionState.status.isGranted -> {
-            // TODO Story 2.1: Replace with actual CameraX PreviewView composable
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DarkNavy)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Camera Screen — Permission Granted",
-                    color = Color.White,
-                    fontSize = 18.sp
+            Box(modifier = Modifier.fillMaxSize()) {
+                CameraViewfinder(
+                    appViewModel = appViewModel,
+                    modifier = Modifier.fillMaxSize()
                 )
+                // TODO Story 2.2: Add READ button overlay here
             }
         }
 
