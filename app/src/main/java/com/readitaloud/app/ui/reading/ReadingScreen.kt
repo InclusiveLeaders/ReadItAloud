@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
@@ -35,6 +34,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readitaloud.app.R
 import com.readitaloud.app.model.AppUiState
 import com.readitaloud.app.model.PlaybackStatus
+import com.readitaloud.app.ui.components.ChoiceButtonPair
+import com.readitaloud.app.ui.components.PlaybackTextDisplay
 import com.readitaloud.app.viewmodel.AppViewModel
 
 @Composable
@@ -61,6 +62,7 @@ fun ReadingScreen(
     val text = readingState?.text ?: ""
     val playbackStatus = readingState?.playback?.status ?: PlaybackStatus.Idle
     val speechRate = readingState?.playback?.speechRate ?: 1.0f
+    val currentWordRange = readingState?.playback?.currentWordRange ?: IntRange.EMPTY
     val isPlaying = playbackStatus == PlaybackStatus.Playing
     val isPaused = playbackStatus == PlaybackStatus.Paused
     val isIdle = playbackStatus == PlaybackStatus.Idle
@@ -70,22 +72,12 @@ fun ReadingScreen(
             .fillMaxSize()
             .background(DarkNavy)
     ) {
-        // Scrollable text display — AC3 (2.3): 18sp minimum
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 32.dp)
-                .padding(bottom = if (isIdle) 200.dp else 160.dp)  // space for control bars
-        ) {
-            item {
-                Text(
-                    text = text,
-                    fontSize = 18.sp,
-                    color = Color(0xFFF9F8F6),   // near-white for dark background
-                    lineHeight = 28.sp
-                )
-            }
-        }
+        // Scrollable text display with word highlighting — Story 3.1 (AC5)
+        PlaybackTextDisplay(
+            text = text,
+            currentWordRange = currentWordRange,
+            modifier = Modifier.padding(bottom = if (isIdle) 200.dp else 160.dp)
+        )
 
         Column(
             modifier = Modifier
@@ -190,40 +182,12 @@ fun ReadingScreen(
                 }
             }
 
-            // --- Post-read buttons (Idle / playback complete) ---
-            if (isIdle) {
-                val cdHearAgain = stringResource(R.string.cd_hear_again_button)
-                Button(
-                    onClick = { appViewModel.hearAgain() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 72.dp)
-                        .semantics { contentDescription = cdHearAgain },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2B1F0A))
-                ) {
-                    Text(
-                        text = stringResource(R.string.btn_hear_again),
-                        fontSize = 16.sp,
-                        color = Color(0xFFC97A1A)
-                    )
-                }
-
-                val cdScanNew = stringResource(R.string.cd_scan_new_button)
-                Button(
-                    onClick = { appViewModel.scanNew() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 72.dp)
-                        .semantics { contentDescription = cdScanNew },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0x14FFFFFF))
-                ) {
-                    Text(
-                        text = stringResource(R.string.btn_scan_new),
-                        fontSize = 16.sp,
-                        color = Color.White
-                    )
-                }
-            }
+            // --- Post-read buttons — Story 3.1 (AC6, AC7): replaced with ChoiceButtonPair
+            ChoiceButtonPair(
+                onHearAgain = { appViewModel.hearAgain() },
+                onScanNew = { appViewModel.scanNew() },
+                visible = isIdle
+            )
         }
     }
 }

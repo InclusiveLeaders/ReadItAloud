@@ -7,7 +7,8 @@ package com.readitaloud.app.model
  */
 data class PlaybackState(
     val status: PlaybackStatus = PlaybackStatus.Idle,
-    val speechRate: Float = 1.0f
+    val speechRate: Float = 1.0f,
+    val currentWordRange: IntRange = IntRange.EMPTY   // Story 3.1: drives PlaybackTextDisplay highlighting
 )
 
 enum class PlaybackStatus {

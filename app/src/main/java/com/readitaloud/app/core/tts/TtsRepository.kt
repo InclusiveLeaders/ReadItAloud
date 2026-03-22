@@ -7,6 +7,9 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,7 +26,18 @@ class TtsRepository @Inject constructor(
     private var currentText: String = ""
     @Volatile private var pausedAtChar: Int = 0   // written by TTS BG thread (onRangeStart), read on Main
     private var currentSpeechRate: Float = 1.0f
-    private var isPaused: Boolean = false          // guards onDone from firing while paused
+    @Volatile private var isPaused: Boolean = false // guards onDone/onRangeStart from firing while paused; @Volatile for TTS-thread visibility
+
+    // Story 3.1: word-position tracking for PlaybackTextDisplay highlighting
+    private val _currentWordRange = MutableStateFlow(IntRange.EMPTY)
+    val currentWordRange: StateFlow<IntRange> = _currentWordRange.asStateFlow()
+
+    // Story 3.1 (pause fix): offset added to onRangeStart positions so highlight stays in sync
+    // with the FULL original text displayed in PlaybackTextDisplay, not the resumed substring.
+    // Accumulated on each resume() call: e.g. paused at char 50 → resume → offset = 50,
+    // so onRangeStart(start=0) emits range 50..N (correct position in original text).
+    // @Volatile: written on main thread (speak/stop/resume/restart), read on TTS bg thread (onRangeStart).
+    @Volatile private var rangeOffset: Int = 0
 
     init {
         tts = TextToSpeech(context) { status ->
@@ -53,8 +67,14 @@ class TtsRepository @Inject constructor(
                     override fun onStop(utteranceId: String?, interrupted: Boolean) {}
 
                     // Story 2.4: track char position for pause/resume (API 26+ — matches minSdk)
+                    // Story 3.1: also emit word range for PlaybackTextDisplay highlighting
                     override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+                        if (isPaused) return   // guard against spurious callbacks after tts?.stop()
                         pausedAtChar = start
+                        // Apply rangeOffset so positions map to the FULL original text, not the
+                        // resumed substring. On first play (rangeOffset=0) this is a no-op.
+                        val offset = rangeOffset
+                        _currentWordRange.value = (start + offset) until (end + offset)
                     }
                 })
             }
@@ -73,6 +93,8 @@ class TtsRepository @Inject constructor(
         }
         currentText = text
         pausedAtChar = 0
+        rangeOffset = 0
+        _currentWordRange.value = IntRange.EMPTY   // Story 3.1: reset highlight on new utterance
         pendingOnDone = onDone
         tts?.setSpeechRate(currentSpeechRate)
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, UTTERANCE_ID)
@@ -105,6 +127,7 @@ class TtsRepository @Inject constructor(
             currentText
         }
         isPaused = false      // clear BEFORE speak so onDone fires normally when this utterance ends
+        rangeOffset += pausedAtChar   // accumulate offset so onRangeStart positions map back to original text
         currentText = resumeText  // track the text now being spoken (fixes double-pause position)
         pausedAtChar = 0          // reset position tracker for the resumed segment
         tts?.setSpeechRate(currentSpeechRate)
@@ -119,6 +142,8 @@ class TtsRepository @Inject constructor(
     fun restart(onDone: (() -> Unit)? = null) {
         if (!isInitialised) return
         pausedAtChar = 0
+        rangeOffset = 0
+        _currentWordRange.value = IntRange.EMPTY   // Story 3.1: reset highlight on restart
         if (onDone != null) pendingOnDone = onDone
         tts?.setSpeechRate(currentSpeechRate)
         tts?.speak(currentText, TextToSpeech.QUEUE_FLUSH, null, UTTERANCE_ID)
@@ -138,6 +163,8 @@ class TtsRepository @Inject constructor(
         isPaused = false
         pendingOnDone = null
         pausedAtChar = 0
+        rangeOffset = 0
+        _currentWordRange.value = IntRange.EMPTY   // Story 3.1: clear highlight on stop
         tts?.stop()
     }
 

@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -40,6 +38,8 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.readitaloud.app.R
 import com.readitaloud.app.model.AppUiState
 import com.readitaloud.app.ui.components.CameraViewfinder
+import com.readitaloud.app.ui.components.ReadButton
+import com.readitaloud.app.ui.components.StateIndicator
 import com.readitaloud.app.viewmodel.AppViewModel
 
 private val Amber = Color(0xFFC97A1A)
@@ -72,16 +72,11 @@ fun CameraScreen(
         }
     }
 
-    // Navigate to ReadingScreen when OCR succeeds; reset to Ready on NoTextFound.
-    // TODO Story 2.3 pre-condition: NoTextFound reset must wait for TTS completion
-    // (or a minimum delay) before calling resetToReady() — otherwise the "no text" announcement
-    // gets cut off by the immediate state transition back to Ready.
+    // Navigate to ReadingScreen when OCR succeeds.
+    // NoTextFound resets to Ready via TTS onDone callback in AppViewModel —
+    // this keeps "NO TEXT" visible in StateIndicator for the full announcement duration.
     LaunchedEffect(uiState) {
-        when (uiState) {
-            is AppUiState.Reading -> onNavigateToReading()
-            is AppUiState.NoTextFound -> appViewModel.resetToReady()
-            else -> { /* no navigation */ }
-        }
+        if (uiState is AppUiState.Reading) onNavigateToReading()
     }
 
     val onOpenSettings: () -> Unit = {
@@ -100,29 +95,20 @@ fun CameraScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // READ button overlay — bottom-centre above system nav bar
-                // Story 3.1 will replace this Button with the custom ReadButton composable
-                val cdRead = stringResource(R.string.cd_read_button)
+                // READ button + state label — bottom-centre above system nav bar (Story 3.1)
                 val isReady = uiState is AppUiState.Ready
-                Button(
-                    onClick = { appViewModel.startCapture() },
-                    enabled = isReady,
+                val isCapturing = uiState is AppUiState.Capturing
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 48.dp)
-                        .size(130.dp)
-                        .semantics { contentDescription = cdRead },
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Amber,
-                        disabledContainerColor = Amber.copy(alpha = 0.4f)
-                    )
                 ) {
-                    Text(
-                        text = stringResource(R.string.btn_read),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                    StateIndicator(uiState = uiState)
+                    ReadButton(
+                        onClick = { appViewModel.startCapture() },
+                        enabled = isReady,
+                        isPulsing = isCapturing
                     )
                 }
             }

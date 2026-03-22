@@ -36,6 +36,18 @@ class AppViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AppUiState>(AppUiState.Ready)
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
 
+    init {
+        // Story 3.1: collect word-position updates from TTS to drive PlaybackTextDisplay highlighting
+        viewModelScope.launch {
+            ttsRepository.currentWordRange.collect { range ->
+                val current = _uiState.value as? AppUiState.Reading ?: return@collect
+                _uiState.value = current.copy(
+                    playback = current.playback.copy(currentWordRange = range)
+                )
+            }
+        }
+    }
+
     /**
      * Binds the CameraX preview to the given lifecycle and surface.
      * Architecture rule: speak BEFORE state update.
@@ -97,7 +109,13 @@ class AppViewModel @Inject constructor(
                                 _uiState.value = playingState   // navigate to ReadingScreen
                             }
                             is ScanResult.NoTextFound -> {
-                                speakAnnouncement(context.getString(R.string.tts_no_text_found))
+                                // Speak BEFORE state update (architecture rule).
+                                // Reset to Ready via onDone so "NO TEXT" label is visible
+                                // for the full duration of the announcement before disappearing.
+                                ttsRepository.speak(
+                                    context.getString(R.string.tts_no_text_found),
+                                    onDone = { _uiState.value = AppUiState.Ready }
+                                )
                                 _uiState.value = AppUiState.NoTextFound
                             }
                             is ScanResult.BlurDetected -> {

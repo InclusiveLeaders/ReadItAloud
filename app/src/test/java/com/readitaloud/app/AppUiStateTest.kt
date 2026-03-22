@@ -99,6 +99,24 @@ class AppUiStateTest {
         val state = PlaybackState()
         assertEquals(PlaybackStatus.Idle, state.status)
         assertEquals(1.0f, state.speechRate)
+        assertEquals(IntRange.EMPTY, state.currentWordRange)   // Story 3.1: default no highlight
+    }
+
+    @Test
+    fun `PlaybackState currentWordRange can be set and copied`() {
+        val state = PlaybackState(currentWordRange = 12..18)
+        assertEquals(12..18, state.currentWordRange)
+
+        val updated = state.copy(currentWordRange = 20..25)
+        assertEquals(20..25, updated.currentWordRange)
+        // Original unchanged
+        assertEquals(12..18, state.currentWordRange)
+    }
+
+    @Test
+    fun `PlaybackState currentWordRange is EMPTY when not set`() {
+        val state = PlaybackState(status = PlaybackStatus.Playing, speechRate = 1.2f)
+        assertEquals(IntRange.EMPTY, state.currentWordRange)
     }
 
     @Test
