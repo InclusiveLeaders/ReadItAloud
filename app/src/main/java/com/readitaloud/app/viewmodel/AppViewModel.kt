@@ -80,9 +80,16 @@ class AppViewModel @Inject constructor(
                                     ttsRepository.speak(
                                         context.getString(R.string.tts_done),
                                         onDone = {
+                                            // Read speechRate from current state at completion time —
+                                            // user may have adjusted it during playback (M1 fix).
+                                            val speechRate = (_uiState.value as? AppUiState.Reading)
+                                                ?.playback?.speechRate ?: 1.0f
                                             _uiState.value = AppUiState.Reading(
                                                 text = text,
-                                                playback = PlaybackState(status = PlaybackStatus.Idle)
+                                                playback = PlaybackState(
+                                                    status = PlaybackStatus.Idle,
+                                                    speechRate = speechRate
+                                                )
                                             )
                                         }
                                     )
@@ -116,19 +123,22 @@ class AppViewModel @Inject constructor(
         )
     }
 
-    /** Restarts TTS from the beginning of the current recognised text. */
+    /** Restarts TTS from the beginning of the current recognised text. Preserves speechRate. */
     fun hearAgain() {
         val current = _uiState.value as? AppUiState.Reading ?: return
         val text = current.text
+        val speechRate = current.playback.speechRate
+        // Use speak() not restart() — currentText may be "Done." after playback chain completed,
+        // so we must pass the original text explicitly to reset currentText correctly.
         ttsRepository.speak(text, onDone = {
             ttsRepository.speak(context.getString(R.string.tts_done), onDone = {
                 _uiState.value = AppUiState.Reading(
                     text = text,
-                    playback = PlaybackState(status = PlaybackStatus.Idle)
+                    playback = PlaybackState(status = PlaybackStatus.Idle, speechRate = speechRate)
                 )
             })
         })
-        _uiState.value = AppUiState.Reading(text, PlaybackState(status = PlaybackStatus.Playing))
+        _uiState.value = AppUiState.Reading(text, PlaybackState(status = PlaybackStatus.Playing, speechRate = speechRate))
     }
 
     /** Stops TTS and resets state to Ready (returns to CameraScreen). */
@@ -142,8 +152,71 @@ class AppViewModel @Inject constructor(
         _uiState.value = AppUiState.Ready
     }
 
-    fun stopPlayback() {}
-    fun togglePlayback() {}
+    /**
+     * Stops TTS, stays on ReadingScreen, shows post-read buttons.
+     * Different from scanNew() which navigates back to CameraScreen.
+     */
+    fun stopPlayback() {
+        val current = _uiState.value as? AppUiState.Reading ?: return
+        ttsRepository.stop()
+        _uiState.value = current.copy(playback = current.playback.copy(status = PlaybackStatus.Idle))
+    }
+
+    /**
+     * Toggles between Playing and Paused states.
+     * Used by the single play/pause button on ReadingScreen.
+     */
+    fun togglePlayback() {
+        val current = _uiState.value as? AppUiState.Reading ?: return
+        when (current.playback.status) {
+            PlaybackStatus.Playing -> {
+                ttsRepository.pause()
+                _uiState.value = current.copy(
+                    playback = current.playback.copy(status = PlaybackStatus.Paused)
+                )
+            }
+            PlaybackStatus.Paused -> {
+                ttsRepository.resume()
+                _uiState.value = current.copy(
+                    playback = current.playback.copy(status = PlaybackStatus.Playing)
+                )
+            }
+            PlaybackStatus.Idle -> { /* no-op — use hearAgain() from post-read state */ }
+        }
+    }
+
+    /** Restarts TTS from the very beginning of the current text. */
+    fun restartPlayback() {
+        val current = _uiState.value as? AppUiState.Reading ?: return
+        val text = current.text
+        val speechRate = current.playback.speechRate
+        ttsRepository.restart(onDone = {
+            ttsRepository.speak(context.getString(R.string.tts_done), onDone = {
+                _uiState.value = AppUiState.Reading(
+                    text = text,
+                    playback = PlaybackState(status = PlaybackStatus.Idle, speechRate = speechRate)
+                )
+            })
+        })
+        _uiState.value = current.copy(playback = current.playback.copy(status = PlaybackStatus.Playing))
+    }
+
+    /**
+     * Adjusts speech rate by [delta] (±0.1f).
+     * Clamps to [MIN_SPEECH_RATE, MAX_SPEECH_RATE]. Applies immediately if playing.
+     */
+    fun adjustSpeechRate(delta: Float) {
+        val current = _uiState.value as? AppUiState.Reading ?: return
+        val rawRate = current.playback.speechRate + delta
+        val newRate = (Math.round(rawRate * 10) / 10f).coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
+        ttsRepository.setSpeechRate(newRate)
+        _uiState.value = current.copy(playback = current.playback.copy(speechRate = newRate))
+        // Apply within 1 second during active playback: pause + resume at new rate
+        if (current.playback.status == PlaybackStatus.Playing) {
+            ttsRepository.pause()
+            ttsRepository.resume()
+        }
+    }
 
     /**
      * Speaks an announcement via TTS before UI state updates.
@@ -171,5 +244,8 @@ class AppViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "AppViewModel"
+        const val MIN_SPEECH_RATE = 0.8f
+        const val MAX_SPEECH_RATE = 1.4f
+        const val SPEECH_RATE_STEP = 0.1f
     }
 }

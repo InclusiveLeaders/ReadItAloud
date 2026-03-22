@@ -40,4 +40,18 @@
     <!-- Content descriptions — Story 2.3 -->
     <string name="cd_hear_again_button">Play text again</string>
     <string name="cd_scan_new_button">Return to camera to scan new text</string>
+
+    <!-- Playback control buttons — Story 2.4 -->
+    <string name="btn_pause">Pause</string>
+    <string name="btn_play">Play</string>
+    <string name="btn_stop">Stop</string>
+    <string name="btn_restart">Restart</string>
+
+    <!-- Content descriptions — Story 2.4 -->
+    <string name="cd_pause_button">Pause reading</string>
+    <string name="cd_play_button">Resume reading</string>
+    <string name="cd_stop_button">Stop reading</string>
+    <string name="cd_restart_button">Restart reading from beginning</string>
+    <string name="cd_rate_decrease">Decrease speech rate</string>
+    <string name="cd_rate_increase">Increase speech rate</string>
 </resources>
