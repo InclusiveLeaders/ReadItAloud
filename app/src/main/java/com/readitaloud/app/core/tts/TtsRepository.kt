@@ -126,10 +126,12 @@ class TtsRepository @Inject constructor(
         } else {
             currentText
         }
-        isPaused = false      // clear BEFORE speak so onDone fires normally when this utterance ends
-        rangeOffset += pausedAtChar   // accumulate offset so onRangeStart positions map back to original text
+        rangeOffset += pausedAtChar   // accumulate BEFORE clearing isPaused: closes the window where
+                                      // a spurious onRangeStart callback could pass the guard and emit
+                                      // a range using the pre-accumulation offset value.
         currentText = resumeText  // track the text now being spoken (fixes double-pause position)
         pausedAtChar = 0          // reset position tracker for the resumed segment
+        isPaused = false          // clear AFTER offset accumulated — onDone now fires normally
         tts?.setSpeechRate(currentSpeechRate)
         tts?.speak(resumeText, TextToSpeech.QUEUE_FLUSH, null, UTTERANCE_ID)
         // pendingOnDone still set from original speak() — onDone fires normally when done
