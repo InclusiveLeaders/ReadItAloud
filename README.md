@@ -3,6 +3,7 @@
 > Point your camera. Tap once. Hear it read aloud.
 
 **Read It Aloud** is an Android accessibility app that reads printed and on-screen text aloud using your device's camera. Designed for adults with reduced vision — no account, no internet, no complexity.
+This is a Hackathon project and currently only half finished. See current status below in the Roadmap section
 
 ---
 
